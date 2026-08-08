@@ -34,9 +34,6 @@ lock, a rate-limited endpoint) and many competing clients retrying against it.
 
 See [`src/lib.rs`](src/lib.rs) for exact implementations.
 
-> **Known issue:** `decorrelated-jitter`'s first delay uses `previous_delay = 0.0`,
-> which produces an inverted range (`base..=0.0`) and will panic. Fix pending — see
-> [TODO](#todo).
 
 ## Usage
 
@@ -61,24 +58,25 @@ Run `cargo run -- --help` for the full generated help text.
 ### Example
 
 ```bash
-cargo run -- --clients 50 --algorithm full-jitter --tries 1000
+ cargo run -- -n 20 -t 50000 -b 1.0 -c 4 -s 1.0 -a  full-jitter       
 ```
 
 ```
 Arguments:
- Args { clients: 50, base: 0.1, cap: 1.0, tries: 1000, max_delay: 1.0, slot_size: 1.0, algorithm: FullJitter }
-Results (1000 tries):
-  mean_completion_time: 12.40s
-  max_completion_time: 22.00s
-  p90_completion_time: 17.00s
-  p95_completion_time: 19.00s
-  p99_completion_time: 21.00s
+ Args { clients: 20, base: 1.0, cap: 4.0, tries: 50000, max_delay: 1.0, slot_size: 1.0, algorithm: FullJitter }
+Results (50000 tries):
+  mean_completion_time: 20.68s
+  max_completion_time: 28.00s
+  p90_completion_time: 23.00s
+  p95_completion_time: 23.00s
+  p99_completion_time: 24.00s
 Attempts Analysis:
-  mean_attempts: 4.10
-  max_attempts: 7.00
-  p90_attempts: 6.00
-  p95_attempts: 6.00
-  p99_attempts: 7.00
+  mean_attempts: 9.05
+  max_attempts: 16
+  p90_attempts: 10.00
+  p95_attempts: 11.00
+  p99_attempts: 12.00
+
 ```
 
 - **completion_time**: how many time slots elapsed before every client was served.
@@ -88,71 +86,14 @@ Attempts Analysis:
   Higher percentiles need larger `--tries` values to be meaningful — with too few
   trials they collapse toward the max.
 
-## Building
 
-```bash
-cargo build --release
-```
-
-### Dependencies
-
-```toml
-[dependencies]
-clap = { version = "4", features = ["derive"] }
-rand = "0.9"
-```
-
-## Project structure
-
-```
-src/
-├── lib.rs   # Backoff trait + algorithm implementations + simulation engine
-└── main.rs  # CLI argument parsing and reporting
-```
 
 ## TODO
 
-### Fix known bugs
-- [ ] `decorrelated-jitter` panics on a client's first retry (`previous_delay = 0.0`
-      makes the random range inverted). Seed `previous_delay` with `base` instead, or
-      special-case `attempt == 0`.
-
-### More algorithms (non-jitter)
-- [ ] **Constant/fixed delay** — naive baseline, every retry waits the same `base`
-      seconds
-- [ ] **Linear backoff** — `delay = base * attempt`, capped at `cap`
-- [ ] **Fibonacci backoff** — `delay = base * fib(attempt)`
-- [ ] **Polynomial/quadratic backoff** — `delay = base * attempt^2`
-- [ ] **Step/tiered backoff** — fixed delay tiers by attempt-count bucket (matches many
-      real HTTP client libraries)
-- [ ] **Token-bucket / rate-limited retry** — clients draw from a shared refilling
-      bucket instead of computing delays independently
-- [ ] **AIMD (additive-increase/multiplicative-decrease)** — delay adapts to observed
-      contention, borrowed from TCP congestion control
-- [ ] **Circuit breaker** — client stops retrying entirely after N consecutive
-      failures, then resumes after a cooldown
-- [ ] **Retry-After / server-directed backoff** — server tells the client exactly when
-      to retry (as in HTTP `429`/`503` `Retry-After` headers); a useful contrast to
-      client-computed algorithms
-
-### More realistic simulation dynamics
-- [ ] Heterogeneous clients — vary `base`/`cap` per client
-- [ ] Server capacity > 1 — serve N clients per slot instead of 1
-- [ ] Client churn — clients give up after N failed attempts
-- [ ] Bursty/staggered arrivals — clients don't all start at t=0
-- [ ] Probabilistic server-side failures on already-served clients
-
-### Metrics & reporting
-- [ ] Per-client attempt distributions, not just the worst client per trial
-- [ ] Throughput-over-time (clients served per slot) to visualize thundering-herd spikes
-- [ ] CSV/JSON export for external plotting
-- [ ] Fairness metric across clients (e.g. Jain's fairness index)
+### More simulation scenarios (beyond retry contention)
+- [ ] **Leader election** — simulate nodes racing to become leader (e.g. randomized election timeouts like Raft)
+- [ ] **Distributed lock acquisition** — multiple nodes contend for a single lock
 
 ### Tooling
 - [ ] `--algorithm all` to run every algorithm and print a comparison table
 - [ ] `--seed` for reproducible runs (currently unseeded — results vary between runs)
-- [ ] Parallelize trials with `rayon` for faster large-`--tries` runs
-
-## License
-
-*(add your license here)*
