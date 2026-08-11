@@ -2,6 +2,8 @@
 name = "oh-my-jitter"
 version = "0.1.0"
 edition = "2024"
+description = "A discrete-time simulator for comparing client retry/backoff strategies under contention"
+license = "MIT"
 
 [dependencies]
 rand = "0.10.2"
