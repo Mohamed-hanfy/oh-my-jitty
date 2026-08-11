@@ -69,7 +69,8 @@ impl Backoff for DecorrelatedJitter {
         _max_delay: f64,
         cap: f64,
     ) -> f64 {
-        cap.min(random_range(base..=previous_delay * 3.0))
+        let upper = (previous_delay * 3.0).max(base);
+        cap.min(random_range(base..=upper))
     }
 }
 
