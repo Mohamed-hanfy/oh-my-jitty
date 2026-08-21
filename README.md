@@ -34,12 +34,44 @@ lock, a rate-limited endpoint) and many competing clients retrying against it.
 
 See [`src/lib.rs`](src/lib.rs) for exact implementations.
 
+## Install
+
+**Prerequisites:** You need `cargo` installed. If you don't have it on Linux or macOS, run:
+
+```bash
+curl https://sh.rustup.rs -sSf | sh
+```
+
+Then install the binary from crates.io:
+
+```bash
+cargo install oh-my-jitter
+```
+
+Then run it directly:
+
+```bash
+oh-my-jitter --help
+```
 
 ## Usage
 
 ```bash
-cargo run -- [OPTIONS]
+oh-my-jitter -h
 ```
+
+```text
+Usage: oh-my-jitter [OPTIONS]
+Options:
+  -n, --clients <CLIENTS>      Number of clients competing for the resource [default: 100]
+  -b, --base <BASE>            Base delay in seconds for exponential backoff [default: 0.1]
+  -c, --cap <CAP>              Maximum delay cap in seconds [default: 1]
+  -t, --tries <TRIES>          Number of simulation runs [default: 10]
+  -s, --slot-size <SLOT_SIZE>  Time slot size in seconds [default: 1]
+  -a, --algorithm <ALGORITHM>  Backoff algorithm to use [default: full-jitter] [possible values: full-jitter, equal-jitter, exponential-backoff, decorrelated-jitter]
+  -h, --help                   Print help
+```
+``
 
 ### Options
 
@@ -49,30 +81,28 @@ cargo run -- [OPTIONS]
 | `--base` | `-b` | `0.1` | Base delay, in seconds |
 | `--cap` | `-c` | `1.0` | Hard ceiling on any computed delay, in seconds |
 | `--tries` | `-t` | `10` | Number of independent trials to run and average over |
-| `--max-delay` | `-m` | `1.0` | Starting range bound used by decorrelated jitter |
 | `--slot-size` | `-s` | `1.0` | Duration of one discrete time slot, in seconds |
 | `--algorithm` | `-a` | `full-jitter` | One of: `exponential-backoff`, `full-jitter`, `equal-jitter`, `decorrelated-jitter` |
 
-Run `cargo run -- --help` for the full generated help text.
 
 ### Example
 
 ```bash
- cargo run -- -n 20 -t 50000 -b 1.0 -c 4 -s 1.0 -a  full-jitter       
+oh-my-jitter -n 20 -t 50000 -b 1.0 -c 4 -s 1.0 -a full-jitter
 ```
 
 ```
 Arguments:
- Args { clients: 20, base: 1.0, cap: 4.0, tries: 50000, max_delay: 1.0, slot_size: 1.0, algorithm: FullJitter }
-Results (50000 tries):
+ Args { clients: 20, base: 1.0, cap: 4.0, tries: 50000, slot_size: 1.0, algorithm: FullJitter }
+Results (50000 tries, and 20 served client):
   mean_completion_time: 20.68s
   max_completion_time: 28.00s
-  p90_completion_time: 23.00s
+  p90_completion_time: 22.00s
   p95_completion_time: 23.00s
   p99_completion_time: 24.00s
 Attempts Analysis:
-  mean_attempts: 9.05
-  max_attempts: 16
+  mean_attempts: 9.06
+  max_attempts: 15
   p90_attempts: 10.00
   p95_attempts: 11.00
   p99_attempts: 12.00
